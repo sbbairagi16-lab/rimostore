@@ -1,0 +1,364 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Primitive Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidOptionalUrl(data, field, maxLen) {
+      return !(field in data) ||
+             data[field] == null ||
+             (data[field] is string && data[field].size() <= maxLen &&
+              (data[field].size() == 0 || data[field].matches('^https://.*$')));
+    }
+
+    function isValidCategory(cat) {
+      return cat in [
+        'Action', 'Puzzle', 'Racing', 'RPG', 'Strategy', 'Arcade',
+        'Productivity', 'Tools', 'Music & Audio', 'Photography',
+        'Education', 'Social', 'Finance', 'Health & Fitness'
+      ];
+    }
+
+    function isValidAgeRating(rating) {
+      return rating in ['Everyone', 'Everyone 10+', 'Teen', 'Mature 17+'];
+    }
+
+    function isValidAppType(appType) {
+      return appType in ['game', 'app'];
+    }
+
+    // --- Validation Blueprints ---
+    function isValidAppListing(data) {
+      return data.keys().hasAll([
+               'developerId', 'developerName', 'title', 'tagline', 'description',
+               'appType', 'category', 'versionName', 'sizeMb', 'ageRating',
+               'accentColorHex', 'iconPreset', 'tags', 'releaseNotes',
+               'published', 'starterCatalog', 'downloadsCount', 'ratingSum',
+               'ratingCount', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'developerId', 'developerName', 'title', 'tagline', 'description',
+               'appType', 'category', 'versionName', 'sizeMb', 'ageRating',
+               'accentColorHex', 'iconPreset', 'iconUrl', 'downloadUrl', 'packageName',
+               'tags', 'releaseNotes', 'published', 'starterCatalog',
+               'downloadsCount', 'ratingSum', 'ratingCount', 'createdAt', 'updatedAt'
+             ]) &&
+             isValidId(data.developerId) &&
+             data.developerName is string && data.developerName.size() >= 2 && data.developerName.size() <= 60 &&
+             data.title is string && data.title.size() >= 2 && data.title.size() <= 50 &&
+             data.tagline is string && data.tagline.size() >= 4 && data.tagline.size() <= 120 &&
+             data.description is string && data.description.size() >= 10 && data.description.size() <= 2000 &&
+             isValidAppType(data.appType) &&
+             isValidCategory(data.category) &&
+             data.versionName is string && data.versionName.size() >= 1 && data.versionName.size() <= 24 &&
+             data.sizeMb is number && data.sizeMb >= 1 && data.sizeMb <= 4096 &&
+             isValidAgeRating(data.ageRating) &&
+             data.accentColorHex is string && data.accentColorHex.size() == 7 && data.accentColorHex.matches('^#[0-9A-Fa-f]{6}$') &&
+             data.iconPreset is string && data.iconPreset.size() >= 1 && data.iconPreset.size() <= 40 &&
+             isValidOptionalUrl(data, 'iconUrl', 500) &&
+             isValidOptionalUrl(data, 'downloadUrl', 500) &&
+             (!('packageName' in data) || data.packageName == null || (data.packageName is string && data.packageName.size() <= 120)) &&
+             data.tags is list && data.tags.size() <= 6 && (data.tags.size() == 0 || data.tags[0] is string) &&
+             data.releaseNotes is string && data.releaseNotes.size() <= 600 &&
+             data.published is bool &&
+             data.starterCatalog is bool &&
+             data.downloadsCount is int && data.downloadsCount >= 0 &&
+             data.ratingSum is int && data.ratingSum >= 0 &&
+             data.ratingCount is int && data.ratingCount >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidDeveloperProfile(data) {
+      return data.keys().hasAll([
+               'userId', 'studioName', 'tagline', 'bio', 'specialty',
+               'avatarPreset', 'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'studioName', 'tagline', 'bio', 'specialty',
+               'avatarPreset', 'websiteUrl', 'createdAt', 'updatedAt'
+             ]) &&
+             isValidId(data.userId) &&
+             data.studioName is string && data.studioName.size() >= 2 && data.studioName.size() <= 60 &&
+             data.tagline is string && data.tagline.size() <= 120 &&
+             data.bio is string && data.bio.size() <= 600 &&
+             data.specialty is string && data.specialty.size() >= 1 && data.specialty.size() <= 40 &&
+             data.avatarPreset is string && data.avatarPreset.size() >= 1 && data.avatarPreset.size() <= 40 &&
+             isValidOptionalUrl(data, 'websiteUrl', 300) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPrivateDeveloperAccount(data) {
+      return data.keys().hasAll([
+               'userId', 'studioName', 'contactEmail', 'termsAccepted',
+               'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'userId', 'studioName', 'contactEmail', 'supportUrl',
+               'termsAccepted', 'createdAt', 'updatedAt'
+             ]) &&
+             isValidId(data.userId) &&
+             data.studioName is string && data.studioName.size() >= 2 && data.studioName.size() <= 60 &&
+             data.contactEmail is string && data.contactEmail.size() >= 3 && data.contactEmail.size() <= 120 &&
+             isValidOptionalUrl(data, 'supportUrl', 300) &&
+             data.termsAccepted is bool && data.termsAccepted == true &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidLibraryEntry(data) {
+      return data.keys().hasAll([
+               'appId', 'title', 'developerName', 'category', 'appType',
+               'installedVersion', 'sizeMb', 'accentColorHex', 'iconPreset',
+               'installedAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'appId', 'title', 'developerName', 'category', 'appType',
+               'installedVersion', 'sizeMb', 'accentColorHex', 'iconPreset',
+               'iconUrl', 'downloadUrl', 'installedAt', 'updatedAt'
+             ]) &&
+             isValidId(data.appId) &&
+             data.title is string && data.title.size() >= 2 && data.title.size() <= 50 &&
+             data.developerName is string && data.developerName.size() >= 2 && data.developerName.size() <= 60 &&
+             isValidCategory(data.category) &&
+             isValidAppType(data.appType) &&
+             data.installedVersion is string && data.installedVersion.size() >= 1 && data.installedVersion.size() <= 24 &&
+             data.sizeMb is number && data.sizeMb >= 1 && data.sizeMb <= 4096 &&
+             data.accentColorHex is string && data.accentColorHex.size() == 7 && data.accentColorHex.matches('^#[0-9A-Fa-f]{6}$') &&
+             data.iconPreset is string && data.iconPreset.size() >= 1 && data.iconPreset.size() <= 40 &&
+             isValidOptionalUrl(data, 'iconUrl', 500) &&
+             isValidOptionalUrl(data, 'downloadUrl', 500) &&
+             data.installedAt is timestamp && data.installedAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidReview(data) {
+      return data.keys().hasAll([
+               'appId', 'userId', 'authorName', 'rating', 'comment',
+               'createdAt', 'updatedAt'
+             ]) &&
+             data.keys().hasOnly([
+               'appId', 'userId', 'authorName', 'rating', 'comment',
+               'createdAt', 'updatedAt'
+             ]) &&
+             isValidId(data.appId) &&
+             isValidId(data.userId) &&
+             data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 60 &&
+             data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+             data.comment is string && data.comment.size() >= 2 && data.comment.size() <= 600 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // --- Collection: /apps/{appId} ---
+    match /apps/{appId} {
+      allow get: if isSignedIn() &&
+                    isValidId(appId) &&
+                    (existing().published == true || existing().developerId == request.auth.uid);
+
+      allow list: if isSignedIn() &&
+                     (resource.data.published == true || resource.data.developerId == request.auth.uid);
+
+      allow create: if isSignedIn() &&
+                       isValidId(appId) &&
+                       isValidAppListing(incoming()) &&
+                       incoming().developerId == request.auth.uid &&
+                       incoming().downloadsCount == 0 &&
+                       incoming().ratingSum == 0 &&
+                       incoming().ratingCount == 0;
+
+      // Action-based update: wrapped by isValidAppListing and immutable field guards
+      allow update: if isSignedIn() &&
+                       isValidId(appId) &&
+                       isValidAppListing(incoming()) &&
+                       incoming().developerId == existing().developerId &&
+                       incoming().starterCatalog == existing().starterCatalog &&
+                       incoming().createdAt == existing().createdAt && (
+                         // Action 1: Developer edits listing metadata or pushes release update
+                         (
+                           existing().developerId == request.auth.uid &&
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'title', 'tagline', 'description', 'category', 'appType',
+                             'versionName', 'sizeMb', 'ageRating', 'downloadUrl',
+                             'accentColorHex', 'iconPreset', 'iconUrl', 'packageName',
+                             'developerName', 'releaseNotes', 'tags', 'published', 'updatedAt'
+                           ])
+                         ) ||
+                         // Action 2: Authenticated user atomically increments download count alongside library install
+                         (
+                           existing().published == true &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['downloadsCount', 'updatedAt']) &&
+                           incoming().downloadsCount == existing().downloadsCount + 1 &&
+                           existsAfter(/databases/$(database)/documents/users/$(request.auth.uid)/library/$(appId))
+                         ) ||
+                         // Action 3: Authenticated user atomically adds a new rating alongside review creation
+                         (
+                           existing().published == true &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['ratingSum', 'ratingCount', 'updatedAt']) &&
+                           incoming().ratingCount == existing().ratingCount + 1 &&
+                           incoming().ratingSum >= existing().ratingSum + 1 &&
+                           incoming().ratingSum <= existing().ratingSum + 5 &&
+                           existsAfter(/databases/$(database)/documents/apps/$(appId)/reviews/$(request.auth.uid))
+                         ) ||
+                         // Action 4: Authenticated user atomically adjusts ratingSum when editing their review
+                         (
+                           existing().published == true &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['ratingSum', 'updatedAt']) &&
+                           incoming().ratingSum >= existing().ratingSum - 4 &&
+                           incoming().ratingSum <= existing().ratingSum + 4 &&
+                           incoming().ratingSum >= existing().ratingCount &&
+                           incoming().ratingSum <= existing().ratingCount * 5 &&
+                           existsAfter(/databases/$(database)/documents/apps/$(appId)/reviews/$(request.auth.uid))
+                         ) ||
+                         // Action 5: Authenticated user atomically decrements rating when deleting their review
+                         (
+                           existing().published == true &&
+                           incoming().diff(existing()).affectedKeys().hasOnly(['ratingSum', 'ratingCount', 'updatedAt']) &&
+                           existing().ratingCount >= 1 &&
+                           incoming().ratingCount == existing().ratingCount - 1 &&
+                           incoming().ratingSum <= existing().ratingSum - 1 &&
+                           incoming().ratingSum >= existing().ratingSum - 5 &&
+                           exists(/databases/$(database)/documents/apps/$(appId)/reviews/$(request.auth.uid)) &&
+                           !existsAfter(/databases/$(database)/documents/apps/$(appId)/reviews/$(request.auth.uid))
+                         )
+                       );
+
+      allow delete: if isSignedIn() &&
+                       isValidId(appId) &&
+                       existing().developerId == request.auth.uid;
+
+      // --- Subcollection: /apps/{appId}/reviews/{reviewId} ---
+      match /reviews/{reviewId} {
+        allow get: if isSignedIn() &&
+                      isValidId(appId) &&
+                      isValidId(reviewId) &&
+                      get(/databases/$(database)/documents/apps/$(appId)).data.published == true;
+
+        allow list: if isSignedIn() &&
+                       resource.data.appId == appId;
+
+        allow create: if isSignedIn() &&
+                         isValidId(appId) &&
+                         isValidId(reviewId) &&
+                         reviewId == request.auth.uid &&
+                         isValidReview(incoming()) &&
+                         incoming().appId == appId &&
+                         incoming().userId == request.auth.uid &&
+                         exists(/databases/$(database)/documents/apps/$(appId)) &&
+                         get(/databases/$(database)/documents/apps/$(appId)).data.published == true;
+
+        allow update: if isSignedIn() &&
+                         isValidId(appId) &&
+                         isValidId(reviewId) &&
+                         reviewId == request.auth.uid &&
+                         isValidReview(incoming()) &&
+                         incoming().appId == existing().appId &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'rating', 'comment', 'authorName', 'updatedAt'
+                         ]);
+
+        allow delete: if isSignedIn() &&
+                         isValidId(appId) &&
+                         isValidId(reviewId) &&
+                         existing().userId == request.auth.uid;
+      }
+    }
+
+    // --- Collection: /developer_profiles/{userId} (Public non-PII Studio Branding) ---
+    match /developer_profiles/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidDeveloperProfile(incoming()) &&
+                       incoming().userId == request.auth.uid;
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidDeveloperProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'studioName', 'tagline', 'bio', 'specialty',
+                         'avatarPreset', 'websiteUrl', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+    }
+
+    // --- Collection: /developers/{userId} (Private Developer Account PII) ---
+    match /developers/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidPrivateDeveloperAccount(incoming()) &&
+                       incoming().userId == request.auth.uid;
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidPrivateDeveloperAccount(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'studioName', 'contactEmail', 'supportUrl', 'termsAccepted', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+    }
+
+    // --- Subcollection: /users/{userId}/library/{appId} ---
+    match /users/{userId}/library/{appId} {
+      allow get: if isOwner(userId) && isValidId(appId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(appId) &&
+                       isValidLibraryEntry(incoming()) &&
+                       incoming().appId == appId &&
+                       exists(/databases/$(database)/documents/apps/$(appId));
+
+      allow update: if isOwner(userId) &&
+                       isValidId(appId) &&
+                       isValidLibraryEntry(incoming()) &&
+                       incoming().appId == existing().appId &&
+                       incoming().installedAt == existing().installedAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'installedVersion', 'title', 'developerName', 'sizeMb',
+                         'downloadUrl', 'iconUrl', 'accentColorHex', 'iconPreset',
+                         'category', 'appType', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(appId);
+    }
+  }
+}

@@ -1,0 +1,403 @@
+{
+  "entities": {
+    "AppListing": {
+      "title": "AppListing",
+      "description": "A published or draft software or game listing uploaded by a registered developer in PulseStore.",
+      "type": "object",
+      "properties": {
+        "developerId": {
+          "type": "string",
+          "description": "UID of the developer who owns and manages this software listing."
+        },
+        "developerName": {
+          "type": "string",
+          "description": "Public studio or developer display name."
+        },
+        "title": {
+          "type": "string",
+          "description": "Display title of the app or game (2-50 chars)."
+        },
+        "tagline": {
+          "type": "string",
+          "description": "Short marketing subtitle shown in storefront cards (4-120 chars)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed app description and feature overview (10-2000 chars)."
+        },
+        "appType": {
+          "type": "string",
+          "enum": ["game", "app"],
+          "description": "Primary storefront section: game or app."
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Action",
+            "Puzzle",
+            "Racing",
+            "RPG",
+            "Strategy",
+            "Arcade",
+            "Productivity",
+            "Tools",
+            "Music & Audio",
+            "Photography",
+            "Education",
+            "Social",
+            "Finance",
+            "Health & Fitness"
+          ],
+          "description": "Storefront browse category."
+        },
+        "versionName": {
+          "type": "string",
+          "description": "Semantic version label such as 1.0.0."
+        },
+        "sizeMb": {
+          "type": "number",
+          "description": "Estimated package size in megabytes (1 to 4096)."
+        },
+        "ageRating": {
+          "type": "string",
+          "enum": ["Everyone", "Everyone 10+", "Teen", "Mature 17+"],
+          "description": "Content age rating classification."
+        },
+        "accentColorHex": {
+          "type": "string",
+          "description": "Hex brand color for the app tile badge (#RRGGBB)."
+        },
+        "iconPreset": {
+          "type": "string",
+          "description": "Vector icon preset identifier for the app badge."
+        },
+        "iconUrl": {
+          "type": "string",
+          "description": "Optional HTTPS image URL for custom app artwork."
+        },
+        "downloadUrl": {
+          "type": "string",
+          "description": "Optional HTTPS release distribution or project web URL."
+        },
+        "packageName": {
+          "type": "string",
+          "description": "Optional reverse-DNS package identifier."
+        },
+        "tags": {
+          "type": "array",
+          "description": "Up to 6 short discovery tags."
+        },
+        "releaseNotes": {
+          "type": "string",
+          "description": "What's new notes for the current version."
+        },
+        "published": {
+          "type": "boolean",
+          "description": "Whether the listing is publicly visible in the store catalog."
+        },
+        "starterCatalog": {
+          "type": "boolean",
+          "description": "Marks initial storefront showcase entries separate from personal studio builds."
+        },
+        "downloadsCount": {
+          "type": "integer",
+          "description": "Total verified user downloads."
+        },
+        "ratingSum": {
+          "type": "integer",
+          "description": "Sum of all user star ratings (1-5)."
+        },
+        "ratingCount": {
+          "type": "integer",
+          "description": "Number of user ratings."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when listing was created (clients submit FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the latest listing update (clients submit FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "developerId",
+        "developerName",
+        "title",
+        "tagline",
+        "description",
+        "appType",
+        "category",
+        "versionName",
+        "sizeMb",
+        "ageRating",
+        "accentColorHex",
+        "iconPreset",
+        "tags",
+        "releaseNotes",
+        "published",
+        "starterCatalog",
+        "downloadsCount",
+        "ratingSum",
+        "ratingCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DeveloperProfile": {
+      "title": "DeveloperProfile",
+      "description": "Public developer studio profile containing non-PII branding information.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "studioName": {
+          "type": "string",
+          "description": "Public developer or studio name (2-60 chars)."
+        },
+        "tagline": {
+          "type": "string",
+          "description": "Short studio tagline."
+        },
+        "bio": {
+          "type": "string",
+          "description": "Public studio biography."
+        },
+        "specialty": {
+          "type": "string",
+          "description": "Primary craft focus such as Indie Games or Productivity Tools."
+        },
+        "avatarPreset": {
+          "type": "string",
+          "description": "Studio badge preset icon."
+        },
+        "websiteUrl": {
+          "type": "string",
+          "description": "Optional public HTTPS studio website."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when developer profile was created (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when developer profile was updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "studioName",
+        "tagline",
+        "bio",
+        "specialty",
+        "avatarPreset",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PrivateDeveloperAccount": {
+      "title": "PrivateDeveloperAccount",
+      "description": "Private developer account configuration containing contact PII, strictly restricted to the owning user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated owner UID."
+        },
+        "studioName": {
+          "type": "string",
+          "description": "Registered studio display name."
+        },
+        "contactEmail": {
+          "type": "string",
+          "description": "Private developer support email."
+        },
+        "supportUrl": {
+          "type": "string",
+          "description": "Optional developer support portal URL."
+        },
+        "termsAccepted": {
+          "type": "boolean",
+          "description": "Confirmation that developer distribution guidelines were accepted."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when developer account was registered (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of latest update (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "studioName",
+        "contactEmail",
+        "termsAccepted",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "InstalledApp": {
+      "title": "InstalledApp",
+      "description": "Record of a game or application downloaded to a user's personal PulseStore library.",
+      "type": "object",
+      "properties": {
+        "appId": {
+          "type": "string",
+          "description": "Referenced AppListing document ID."
+        },
+        "title": {
+          "type": "string",
+          "description": "Snapshot title of the installed app."
+        },
+        "developerName": {
+          "type": "string",
+          "description": "Developer studio name."
+        },
+        "category": {
+          "type": "string",
+          "description": "App category."
+        },
+        "appType": {
+          "type": "string",
+          "enum": ["game", "app"],
+          "description": "game or app."
+        },
+        "installedVersion": {
+          "type": "string",
+          "description": "Version currently installed in user library."
+        },
+        "sizeMb": {
+          "type": "number",
+          "description": "Package size in megabytes."
+        },
+        "accentColorHex": {
+          "type": "string",
+          "description": "Brand tile accent color hex."
+        },
+        "iconPreset": {
+          "type": "string",
+          "description": "Icon preset identifier."
+        },
+        "iconUrl": {
+          "type": "string",
+          "description": "Optional custom artwork URL."
+        },
+        "downloadUrl": {
+          "type": "string",
+          "description": "Optional HTTPS release package URL."
+        },
+        "installedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of initial installation (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of latest version update (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "appId",
+        "title",
+        "developerName",
+        "category",
+        "appType",
+        "installedVersion",
+        "sizeMb",
+        "accentColorHex",
+        "iconPreset",
+        "installedAt",
+        "updatedAt"
+      ]
+    },
+    "AppReview": {
+      "title": "AppReview",
+      "description": "User-submitted star rating and review for a published software listing.",
+      "type": "object",
+      "properties": {
+        "appId": {
+          "type": "string",
+          "description": "Parent AppListing document ID."
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the review author."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Display name of the review author."
+        },
+        "rating": {
+          "type": "integer",
+          "description": "Star rating from 1 to 5."
+        },
+        "comment": {
+          "type": "string",
+          "description": "Written review commentary (2-600 chars)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when review was created (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when review was edited (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "appId",
+        "userId",
+        "authorName",
+        "rating",
+        "comment",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/apps/{appId}": {
+      "schema": {
+        "$ref": "#/entities/AppListing"
+      },
+      "description": "Public catalog of published apps and games plus private drafts readable by their developer."
+    },
+    "/apps/{appId}/reviews/{reviewId}": {
+      "schema": {
+        "$ref": "#/entities/AppReview"
+      },
+      "description": "Per-app user ratings and reviews keyed by reviewer UID."
+    },
+    "/developer_profiles/{userId}": {
+      "schema": {
+        "$ref": "#/entities/DeveloperProfile"
+      },
+      "description": "Public studio branding profiles without PII."
+    },
+    "/developers/{userId}": {
+      "schema": {
+        "$ref": "#/entities/PrivateDeveloperAccount"
+      },
+      "description": "Private developer account settings and contact PII isolated strictly to the owner."
+    },
+    "/users/{userId}/library/{appId}": {
+      "schema": {
+        "$ref": "#/entities/InstalledApp"
+      },
+      "description": "Authenticated user's personal downloaded and installed software library."
+    }
+  }
+}
